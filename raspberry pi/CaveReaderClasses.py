@@ -73,13 +73,12 @@ class Stations:
         import matplotlib.pyplot as plt
         import matplotlib.patches as patches
         import math
+        from scipy.spatial.transform import Rotation as R
         distance = self.dist
-        pitch = math.radians(self.pitch)
-        roll = math.radians(self.roll)
-        yaw = math.radians(self.yaw)
-        self.x = distance + float(prevxpos)
-        self.y = float(prevypos)
-        self.z = float(prevzpos)
+        r = R.from_quat([self.quatb, self.quatc, self.quatd, self.quata])
+        vector = [distance, 0, 0]
+        newvector = r.apply(v)
+        print(newvector)
         if key == '-3D':
             #Add X Rotations Influence
             self.y = self.y*math.cos(pitch)-self.z*math.sin(pitch)
