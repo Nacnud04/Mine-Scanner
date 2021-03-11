@@ -25,8 +25,8 @@ class Stations:
                 print("No microcontroller found")
         shot = LED(26)
         distance = []
-        x, y, z = [], [], []
-        xnew, ynew, znew= "", "", ""
+        a, b, c, d = [], [], [], []
+        anew, bnew, cnew, dnew= "", "", "", ""
         shot.on()
         time.sleep(.1)
         shot.off()
@@ -40,24 +40,21 @@ class Stations:
             data = ser.readline()
             print(data)
             if data == b'Position Data:\r\n':
-                for i in range(401):
+                for i in range(16):
                     data = ser.readline()
                     data = data.decode("utf-8")
                     print(data)
-                    xnew, ynew, znew = data.split(",")
+                    anew, bnew, cnew, dnew = data.split("\t")
                     for letter in Stations.unwanted :
-                        xnew = xnew.replace(letter,'')
-                    for letter in Stations.unwanted :
-                        ynew = ynew.replace(letter,'')
-                    for letter in Stations.unwanted :
-                        znew = znew.replace(letter,'')
-                    xnew = round(float(xnew), 3)
-                    ynew = round(float(ynew), 3)
-                    znew = round(float(znew), 3)
-                    print(str(xnew)+","+str(ynew)+","+str(znew))
-                    x.append(float(xnew))
-                    y.append(float(ynew)) 
-                    z.append(float(znew))
+                        anew = anew.replace(letter,'')
+                        bnew = bnew.replace(letter,'')
+                        cnew = cnew.replace(letter,'')
+                        dnew = dnew.replace(letter,'')
+                    print(f"{str(anew)},{str(bnew)},{str(cnew)},{str(dnew)}")
+                    a.append(float(anew))
+                    b.append(float(bnew)) 
+                    c.append(float(cnew))
+                    d.append(float(dnew))
             elif data == b'Distance Data:\r\n':
                 for i in range(31):
                     data = ser.readline()
@@ -65,9 +62,10 @@ class Stations:
                     print(data)
                     distance.append(data)
                 print('Shot Complete')
-        self.pitch = median(x)
-        self.roll = median(y)
-        self.yaw = median(z)
+        self.quata = median(a)
+        self.quatb = median(b)
+        self.quatc = median(c)
+        self.quatd = median(d)
         self.dist = median(distance)
         print('Done')
 
