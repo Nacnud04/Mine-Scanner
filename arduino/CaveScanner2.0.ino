@@ -140,10 +140,8 @@ void shot(){
   digitalWrite(laserPin, LOW);
   delay(7000);
   Serial.println("Position Data:");
-  for (int i = 0; i <= 400; i++) {
+  for (int i = 0; i <= 15; i++) {
     getPosition();
-    Serial.print("Xac:");Serial.print(xac);Serial.print(",Yac:");
-    Serial.print(yac);Serial.print(",Zac:");Serial.println(azimuth);
     delay(5);
   }
   Serial.println("Distance Data:");
@@ -156,38 +154,21 @@ void shot(){
 }
 
 void getPosition(){
-  int x, y, z;
-  Wire.beginTransmission(MPU);
-  Wire.write(0x3B);  
-  Wire.endTransmission(false);
-  Wire.requestFrom(MPU,12,true);  
-  AcX=Wire.read()<<8|Wire.read();    
-  AcY=Wire.read()<<8|Wire.read();  
-  AcZ=Wire.read()<<8|Wire.read();  
-  GyX=Wire.read()<<8|Wire.read();  
-  GyY=Wire.read()<<8|Wire.read();  
-  GyZ=Wire.read()<<8|Wire.read();  
-  float filterVal = .985 ;
-  if (filterVal > 1){
-    filterVal = .99;
-  }
-  else if (filterVal <= 0){
-    filterVal = 0;
-  }
-  qmc.read(&x, &y, &z,&azimuth);
-  //Accelerometer to angle
-  AcX = AcX - AcXCal;
-  AcY = AcY - AcYCal;
-  AcZ = AcZ - AcZCal;
-  smoothedValAcX = lowPassFilterAcX(AcX, filterVal, smoothedValAcX);
-  smoothedValAcY = lowPassFilterAcY(AcY, filterVal, smoothedValAcY);
-  smoothedValAcZ = lowPassFilterAcZ(AcZ, filterVal, smoothedValAcZ);
-  int xAng = map(AcX,minVal,maxVal,-90,90);
-  int yAng = map(AcY,minVal,maxVal,-90,90);
-  int zAng = map(AcZ,minVal,maxVal,-90,90);
-  xac= RAD_TO_DEG * (atan2(-yAng, -zAng)+PI);
-  yac= RAD_TO_DEG * (atan2(-xAng, -zAng)+PI);
-  zac= RAD_TO_DEG * (atan2(-yAng, -xAng)+PI);
+   if (!dmpReady) return;
+    // read a packet from FIFO
+    if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) { // Get the Latest packet 
+        #ifdef OUTPUT_READABLE_QUATERNION
+            // display quaternion values in easy matrix form: w x y z
+            mpu.dmpGetQuaternion(&q, fifoBuffer);
+            Serial.print("quat\t");
+            Serial.print(q.w);
+            Serial.print("\t");
+            Serial.print(q.x);
+            Serial.print("\t");
+            Serial.print(q.y);
+            Serial.print("\t");
+            Serial.println(q.z);
+        #endif
 }
 
 float ultrasonicPing(){
