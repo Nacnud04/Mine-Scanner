@@ -58,17 +58,15 @@ class Stations:
             data = ser.readline()
             print(data)
             if data == b'Position Data:\r\n':
-                for i in range(16):
+                for i in range(15):
                     data = ser.readline()
                     data = data.decode("utf-8")
-                    print(data)
-                    anew, bnew, cnew, dnew = data.split("\t")
+                    junk, anew, bnew, cnew, dnew = data.split("\t")
                     for letter in Stations.unwanted :
                         anew = anew.replace(letter,'')
                         bnew = bnew.replace(letter,'')
                         cnew = cnew.replace(letter,'')
                         dnew = dnew.replace(letter,'')
-                    print(f"{str(anew)},{str(bnew)},{str(cnew)},{str(dnew)}")
                     a.append(float(anew))
                     b.append(float(bnew)) 
                     c.append(float(cnew))
@@ -77,7 +75,6 @@ class Stations:
                 for i in range(31):
                     data = ser.readline()
                     data = float(data.decode("utf-8"))
-                    print(data)
                     distance.append(data)
                 print('Shot Complete')
         self.quatw = median(a)
@@ -85,6 +82,7 @@ class Stations:
         self.quaty = median(c)
         self.quatz = median(d)
         self.dist = median(distance)
+        print(f'Quat: {self.quata}, {self.quatb}, {self.quatc}, {self.quatd}   Dist: {self.dist}')
         print('Done')
 
     def degToPosition(self, prevxpos, prevypos, prevzpos, key):
