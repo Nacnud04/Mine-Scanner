@@ -108,6 +108,9 @@ class Stations:
         vector = np.array([[distance],[0],[0]])
         self.pos = R * vector
         print(np.round(self.pos, decimals=2))
+        self.x = self.pos[0,0]
+        self.y = self.pos[1,0]
+        self.z = self.pos[2,0]
         
     def show(self, x, y, z):
         import matplotlib.pyplot as plt
