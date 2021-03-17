@@ -1,3 +1,21 @@
+import numpy as np
+import math as m
+# fundamental rotation matrices
+def Rx(theta):
+  return np.matrix([[ 1, 0           , 0           ],
+                   [ 0, m.cos(theta),-m.sin(theta)],
+                   [ 0, m.sin(theta), m.cos(theta)]])
+  
+def Ry(theta):
+  return np.matrix([[ m.cos(theta), 0, m.sin(theta)],
+                   [ 0           , 1, 0           ],
+                   [-m.sin(theta), 0, m.cos(theta)]])
+  
+def Rz(theta):
+  return np.matrix([[ m.cos(theta), -m.sin(theta), 0 ],
+                   [ m.sin(theta), m.cos(theta) , 0 ],
+                   [ 0           , 0            , 1 ]])
+
 #Stations
 class Stations:
     
@@ -62,36 +80,34 @@ class Stations:
                     print(data)
                     distance.append(data)
                 print('Shot Complete')
-        self.quata = median(a)
-        self.quatb = median(b)
-        self.quatc = median(c)
-        self.quatd = median(d)
+        self.quatw = median(a)
+        self.quatx = median(b)
+        self.quaty = median(c)
+        self.quatz = median(d)
         self.dist = median(distance)
         print('Done')
 
     def degToPosition(self, prevxpos, prevypos, prevzpos, key):
-        import matplotlib.pyplot as plt
-        import matplotlib.patches as patches
-        import math
-        from scipy.spatial.transform import Rotation as R
         distance = self.dist
-        r = R.from_quat([self.quatb, self.quatc, self.quatd, self.quata])
-        vector = [distance, 0, 0]
-        newvector = r.apply(v)
-        print(newvector)
-        if key == '-3D':
-            #Add X Rotations Influence
-            self.y = self.y*math.cos(pitch)-self.z*math.sin(pitch)
-            self.z = self.y*math.sin(pitch)+self.z*math.cos(pitch)
-            #Add Y Rotations Influence
-            self.x = self.x*math.cos(roll)+self.z*math.sin(roll)
-            self.z = -self.x*math.sin(roll)+self.z*math.cos(roll)
-        if key == '-2D' or key == '-3D':
-            #Add Z Rotations Influence :
-            self.x = self.x*math.cos(yaw)-self.y*math.sin(yaw)
-            self.y = self.x*math.sin(yaw)+self.y*math.cos(yaw)
-        else :
-            print("Key unknown")
+        # Convert quat to euler
+        t0 = +2.0 * (self.quatw * self.quatx + self.quaty * self.quatz)
+        t1 = +1.0 - 2.0 * (self.quatx * self.quatx + self.quaty * self.quaty)
+        psi = math.atan2(t0, t1)
+        t2 = +2.0 * (self.quatw * self.quaty - self.quatz * self.quatx)
+        t2 = +1.0 if t2 > +1.0 else t2
+        t2 = -1.0 if t2 < -1.0 else t2
+        theta = math.asin(t2)
+        t3 = +2.0 * (self.quatw * self.quatz + self.quatx * self.quaty)
+        t4 = +1.0 - 2.0 * (self.quaty * self.quaty + self.quatz * self.quatz)
+        phi = math.atan2(t3, t4)
+        print(f'Euler: roll - {self.roll_x}, pitch - {self.pitch_y}, yaw - {self.yaw_z}')
+        # into rotation matrix
+        R = Rz(psi) * Ry(theta) * Rx(phi)
+        print(np.round(R, decimals = 3))
+        # apply to vector
+        vector = np.array([[distance],[0],[0]])
+        self.pos = R * vector
+        print(np.round(self.pos, decimals=2))
         
     def show(self, x, y, z):
         import matplotlib.pyplot as plt
