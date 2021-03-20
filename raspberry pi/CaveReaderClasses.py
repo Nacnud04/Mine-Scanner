@@ -56,7 +56,6 @@ class Stations:
         shot.off()
         for i in range(2):
             data = ser.readline()
-            print(data)
             if data == b'Position Data:\r\n':
                 for i in range(15):
                     data = ser.readline()
@@ -82,41 +81,28 @@ class Stations:
         self.quaty = median(c)
         self.quatz = median(d)
         self.dist = median(distance)
-        print(f'Quat: {self.quata}, {self.quatb}, {self.quatc}, {self.quatd}   Dist: {self.dist}')
+        print(f'Quat: {self.quatw}, {self.quatx}, {self.quaty}, {self.quatz}   Dist: {self.dist}')
         print('Done')
 
     def degToPosition(self, prevxpos, prevypos, prevzpos, key):
-        distance = self.dist
-        # Convert quat to euler
-        t0 = +2.0 * (self.quatw * self.quatx + self.quaty * self.quatz)
-        t1 = +1.0 - 2.0 * (self.quatx * self.quatx + self.quaty * self.quaty)
-        psi = math.atan2(t0, t1)
-        t2 = +2.0 * (self.quatw * self.quaty - self.quatz * self.quatx)
-        t2 = +1.0 if t2 > +1.0 else t2
-        t2 = -1.0 if t2 < -1.0 else t2
-        theta = math.asin(t2)
-        t3 = +2.0 * (self.quatw * self.quatz + self.quatx * self.quaty)
-        t4 = +1.0 - 2.0 * (self.quaty * self.quaty + self.quatz * self.quatz)
-        phi = math.atan2(t3, t4)
-        print(f'Euler: roll - {self.roll_x}, pitch - {self.pitch_y}, yaw - {self.yaw_z}')
-        # into rotation matrix
-        R = Rz(psi) * Ry(theta) * Rx(phi)
-        print(np.round(R, decimals = 3))
+        from pyquaternion import Quaternion
+        # import quat
+        my_quat = Quaternion(self.quatw, self.quatx, self.quaty, self.quatz)
         # apply to vector
-        vector = np.array([[distance],[0],[0]])
-        self.pos = R * vector
+        vector = np.array([self.dist,0,0])
+        self.pos = my_quat.rotate(vector)
         print(np.round(self.pos, decimals=2))
-        self.x = self.pos[0,0]
-        self.y = self.pos[1,0]
-        self.z = self.pos[2,0]
+        self.x = self.pos[0] + prevxpos
+        self.y = self.pos[1] + prevypos
+        self.z = self.pos[2] + prevzpos
         
     def show(self, x, y, z):
         import matplotlib.pyplot as plt
         import matplotlib.patches as patches
         from PIL import Image
         ax = plt.axes(projection='3d')
-        ax.scatter(x[0:self.number + 1], y[0:self.number + 1], z[0:self.number + 1], marker = 's', color = 'grey')
-        ax.scatter(x[0:self.number + 1], y[0:self.number + 1], z[0:self.number + 1], marker = 'x', color = 'black')
+        ax.scatter(x[1:self.number + 1], y[1:self.number + 1], z[1:self.number + 1], marker = 's', color = 'grey')
+        ax.scatter(x[1:self.number + 1], y[1:self.number + 1], z[1:self.number + 1], marker = 'x', color = 'black')
         ax.plot3D(x[0:self.number + 1], y[0:self.number + 1], z[0:self.number + 1], 'gray')
         ax.scatter(x[0], y[0], z[0], marker = 's', color = 'red')
         ax.scatter(x[self.number], y[self.number], z[self.number], marker = 's', color = 'green')
