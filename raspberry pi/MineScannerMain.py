@@ -1,3 +1,4 @@
+import sys
 #Establish Serial
 import serial
 try :
@@ -9,6 +10,7 @@ except :
         print("Establishing Serial on /dev/ttyACM1...")
     except :
         print("No microcontroller found")
+        sys.exit()
 ser.close()
 ser.open()
 
@@ -44,9 +46,11 @@ def calibrate():
     calibrate.on()
     time.sleep(10)
     calibrate.off()
-    for i in range(2):
-        data = ser.readline()
-        print(data)
+    for i in range(12):
+        status = ser.readline()
+        print(status.decode().rstrip())
+    print("Callibration & setup complete")
+        
         
 def Shot2D():
     global totStations
@@ -55,13 +59,13 @@ def Shot2D():
     totStations += 1
     station = Stations('Alley',totStations)
     station.generateData()
-    station.degToPosition(0,0,0,'-2D')
+    if totStations == 1 :
+        station.degToPosition(0,0,0,'-2D')
+    else :
+        print(x)
+        station.degToPosition(x[totStations-1], y[totStations-1], z[totStations-1], '-2D')
     stations.append(station)
     activeStation += 1
-    if totStations >= 2 :
-        station.x += stations[totStations-1].x
-        station.y += stations[totStations-1].y
-        station.z += stations[totStations-1].z
     updateXYZ(station.x, station.y, station.z)
     station.show(x, y, z)
     statmapphoto = PhotoImage(file = 'statmap.ppm')
