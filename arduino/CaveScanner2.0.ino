@@ -2,10 +2,6 @@
 #include <MechaQMC5883.h>
 MechaQMC5883 qmc;
 const int MPU=0x68; 
-int16_t AcX,AcY,AcZ,Tmp,GyX,GyY,GyZ;
-int16_t AcXCal,AcYCal,AcZCal,TmpCal,GyXCal,GyYCal,GyZCal;
-float smoothedValAcX,smoothedValAcY,smoothedValAcZ,smoothedValGyX=0.0,smoothedValGyY=0.0,smoothedValGyZ=0.0;
-float xac,yac,zac,xgy,ygy,zgy;
 int minVal=265,maxVal=402;
 int i = 0;
 int callibration=8,SHOT=9;
@@ -60,7 +56,15 @@ void setup(){
 
 void loop(){
   i = 0;
-  getPosition();
+  if (Serial.available() > 0) {
+    String command = Serial.readString();
+  }
+  if (command == "position") {
+    getPosition()
+  }
+  else if (command == "ping") {
+    ultrasonicPing()
+  }
   //SHOT
   if (digitalRead(SHOT) == HIGH){
     shot();
@@ -129,6 +133,25 @@ void i2csetup(){
   pinMode(LED_PIN, OUTPUT);
 }
 
+long microsecondsToInches(long microseconds){
+  return microseconds/74/2;
+}
+
+float ultrasonicPing(){
+  long duration, inches;
+  pinMode(10, OUTPUT);
+  digitalWrite(10, LOW);
+  delayMicroseconds(2);
+  digitalWrite(10, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(10, LOW);
+  pinMode(11, INPUT);
+  duration = pulseIn(11, HIGH);
+  inches = microsecondsToInches(duration);
+  return inches;
+}
+
+
 void shot(){
   int laserPin=12;
   pinMode(laserPin, OUTPUT);
@@ -169,33 +192,5 @@ void getPosition(){
             Serial.print("\t");
             Serial.println(q.z);
         #endif
-}
-
-float ultrasonicPing(){
-  long duration, inches;
-  pinMode(10, OUTPUT);
-  digitalWrite(10, LOW);
-  delayMicroseconds(2);
-  digitalWrite(10, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(10, LOW);
-  pinMode(11, INPUT);
-  duration = pulseIn(11, HIGH);
-  inches = microsecondsToInches(duration);
-  return inches;
-}
-long microsecondsToInches(long microseconds){
-  return microseconds/74/2;
-}
-int lowPassFilterAcX(int in, float filterVal, float smoothedValAcX){
-  smoothedValAcX = (in*(1-filterVal)) + (smoothedValAcX*filterVal);
-  return smoothedValAcX;
-}
-int lowPassFilterAcY(int in, float filterVal, float smoothedValAcY){
-  smoothedValAcY = (in*(1-filterVal)) + (smoothedValAcY*filterVal);
-  return smoothedValAcY;
-}
-int lowPassFilterAcZ(int in, float filterVal, float smoothedValAcZ){
-  smoothedValAcZ = (in*(1-filterVal)) + (smoothedValAcZ*filterVal);
-  return smoothedValAcZ;
+    }
 }
