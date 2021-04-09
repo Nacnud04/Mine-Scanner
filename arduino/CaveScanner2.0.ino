@@ -56,20 +56,84 @@ void setup(){
 
 void loop(){
   i = 0;
-  if (Serial.available() > 0) {
-    String command = Serial.readString();
-  }
+  String command;
+  command = serial_input();
   if (command == "position") {
-    getPosition()
+    getPosition();
+  }
+  else if (command == "position_continous") {
+    while (1==1){
+      command = serial_input();
+      if (command == "stop"){
+        break;
+      }
+      getPosition();
+    }
   }
   else if (command == "ping") {
-    ultrasonicPing()
+    float distance = ultrasonicPing();
+    Serial.println(distance);
+  }
+  else if (command == "ping_continous") {
+    while (1==1){
+      command = serial_input();
+      if (command == "stop"){
+        break;
+      }
+      float distance = ultrasonicPing();
+      Serial.println(distance);
+    }
+  }
+  else if (command == "position_ping"){
+    while (1==1){
+      command = serial_input();
+      if (command == "stop"){
+        break;
+      }
+      getPosition();
+      float distance = ultrasonicPing();
+      Serial.println(distance);
+    }
+  }
+  else if (command == "laser_on"){
+    laser_on();
+  }
+  else if (command == "laser_off"){
+    laser_off();
   }
   //SHOT
   if (digitalRead(SHOT) == HIGH){
     shot();
   }
   delay(20);
+}
+
+String serial_input(){
+  String input;
+  if (Serial.available() > 0) {
+    input = Serial.readString();
+    input.trim();
+    Serial.print("Command received: ");
+    Serial.println(input);
+  }
+  return input;
+}
+
+void callibration_continue(){
+  boolean move_on = false;
+  while (move_on == false){
+    if (Serial.available() > 0) {
+      String cont = Serial.readString();
+      Serial.println("Continuing callibration as requested over SERIAL.");
+      move_on == true;
+      break;
+    }
+    else if (digitalRead(callibration) == HIGH) {
+      Serial.println("Continuing callibration as requested by GPIO");
+      move_on == true;
+      break;
+    }
+  }
 }
 
 void i2csetup(){
@@ -91,8 +155,8 @@ void i2csetup(){
   
   // start mpu when ready
   Serial.println(F("\nWaiting for callibration pin to go high: "));
-  while (digitalRead(callibration) == LOW){
-  }
+  callibration_continue();
+  
   // load & config DMP
   Serial.println(F("Initalizing DMP..."));
   devStatus = mpu.dmpInitialize();
@@ -151,9 +215,17 @@ float ultrasonicPing(){
   return inches;
 }
 
+int laserPin = 12;
+void laser_on(){
+  pinMode(laserPin, OUTPUT);
+  digitalWrite(laserPin, HIGH);
+}
+void laser_off(){
+  pinMode(laserPin, OUTPUT);
+  digitalWrite(laserPin, LOW);
+}
 
 void shot(){
-  int laserPin=12;
   pinMode(laserPin, OUTPUT);
   digitalWrite(laserPin, HIGH);
   delay(500);
