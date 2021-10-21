@@ -12,6 +12,8 @@ class Room:
     def room2DScan(self, points):
         import sys
         import os
+        import serial
+        import time
         from math import cos, sin, pi, floor
         from adafruit_rplidar import RPLidar
         try :
@@ -44,27 +46,41 @@ class Room:
                         x.append(xnew)
                         y.append(ynew)
         except TypeError:
-            print('Stoping')
+            print('Stopping')
         print(len(x))
         lidar.stop()
         lidar.disconnect()
         self.x2d = x
         self.y2d = y
     
-    def addOffset2D(self, start, end, statoffx, statoffy):
+    def addOffset2D(self, offsetx, offsety):
         x = self.x2d
         y = self.y2d
         for i in range(360):
-            x[i] += statoffx
-            y[i] += statoffy
+            x[i] += offsetx
+            y[i] += offsety
+        x.append(offsetx)
+        y.append(offsety)
         self.x2d = x
         self.y2d = y
         
-    def rotate2Ddata(self, yaw):
+    def rotate2Ddata(self, w, x, y, z):
         import math
-        for i in range(len(self.x2d)):
-            self.x2d[i] = self.x2d[i]*math.cos(yaw)-self.y2d[i]*math.sin(yaw)
-            self.y2d[i] = self.x2d[i]*math.sin(yaw)+self.y2d[i]*math.cos(yaw)
+        from pyquaternion import Quaternion
+        import numpy as np
+        # import quat
+        my_quat = Quaternion(w, x, y, z)
+        x = self.x2d
+        y = self.y2d
+        for i in range(360):
+            vector = np.array([x[i],y[i],0])
+            self.pos = my_quat.rotate(vector)
+            print(np.round(self.pos, decimals=2))
+            x[i] = self.pos[0]
+            y[i] = self.pos[1]
+            #scraps -> self.z = self.pos[2]
+        self.x2d = x
+        self.y2d = y
         
     def showRoom(self, data):
         import matplotlib.pyplot as plt
@@ -110,12 +126,10 @@ class Room:
             print(data[i].y2d)
         allx.extend(self.x2d)
         ally.extend(self.y2d)
-        fig, (ax1, ax2) = pltlin.subplots(nrows=1, ncols=2)
+        fig, (ax1) = pltlin.subplots(nrows=1, ncols=1)
         print(allx)
         print(ally)
         ax1.scatter(allx, ally, color='black')
-        ax2.plot(self.x2d, self.y2d)
 #         pltlin.axes().set_aspect('equal')
         ax1.axis('square')
-        ax2.axis('square')
         pltlin.show()
